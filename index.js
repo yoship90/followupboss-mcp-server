@@ -2907,10 +2907,22 @@ async function main() {
 
   const httpServer = http.createServer(async (req, res) => {
     try {
-      await transport.handleRequest(req, res);
+      if (req.method === 'POST') {
+        const body = await new Promise((resolve, reject) => {
+          let data = '';
+          req.on('data', chunk => { data += chunk; });
+          req.on('end', () => {
+            try { resolve(data ? JSON.parse(data) : undefined); }
+            catch (e) { reject(e); }
+          });
+          req.on('error', reject);
+        });
+        await transport.handleRequest(req, res, body);
+      } else {
+        await transport.handleRequest(req, res);
+      }
     } catch (err) {
-      console.error('Transport error:', err.message);
-      console.error(err.stack);
+      console.error('Transport error:', err.message, err.stack);
       if (!res.headersSent) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
