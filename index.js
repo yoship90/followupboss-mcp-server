@@ -11,9 +11,10 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
+import http from 'http';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -2897,9 +2898,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StdioServerTransport();
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
+
   await server.connect(transport);
-  console.error(`Follow Up Boss MCP Server v1.1.1 started (${activeTools.length} tools${FUB_SAFE_MODE ? ', SAFE MODE — delete tools disabled' : ''})`);
+
+  const httpServer = http.createServer(async (req, res) => {
+    try {
+      if (req.method === 'POST') {
+        const body = await new Promise((resolve, reject) => {
+          let data = '';
+          req.on('data', chunk => { data += chunk; });
+          req.on('end', () => {
+            try { resolve(data ? JSON.parse(data) : undefined); }
+            catch (e) { reject(e); }
+          });
+          req.on('error', reject);
+        });
+        await transport.handleRequest(req, res, body);
+      } else {
+        await transport.handleRequest(req, res);
+      }
+    } catch (err) {
+      console.error('Transport error:', err.message, err.stack);
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    }
+  });
+
+  const port = parseInt(process.env.MCP_PORT || '8091', 10);
+  httpServer.listen(port, () => {
+    console.error(`Follow Up Boss MCP Server v1.1.1 started (${activeTools.length} tools${FUB_SAFE_MODE ? ', SAFE MODE — delete tools disabled' : ''}) — listening on port ${port}`);
+  });
 }
 
 main().catch(console.error);

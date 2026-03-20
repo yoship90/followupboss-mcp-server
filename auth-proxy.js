@@ -41,15 +41,15 @@ function verifyPKCE(codeVerifier, codeChallenge, method) {
   return codeVerifier === codeChallenge;
 }
 
-// Start supergateway on the internal port
+// Start MCP server directly on the internal port
 const gw = spawn(
-  "npx",
-  ["-y", "supergateway", "--port", String(INTERNAL_PORT), "--stdio", "node index.js", "--outputTransport", "streamableHttp", "--streamableHttpPath", "/sse"],
-  { stdio: "inherit", env: process.env }
+  "node",
+  ["index.js"],
+  { stdio: "inherit", env: { ...process.env, MCP_PORT: String(INTERNAL_PORT) } }
 );
 
 gw.on("error", (err) => {
-  console.error("Failed to start supergateway:", err);
+  console.error("Failed to start MCP server:", err);
   process.exit(1);
 });
 
