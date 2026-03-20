@@ -2863,20 +2863,21 @@ async function handleToolCall(name, args) {
 // MCP Server Setup
 // ---------------------------------------------------------------------------
 
-const server = new Server(
-  { name: 'followupboss-mcp-server', version: '1.0.0' },
-  { capabilities: { tools: {} } }
-);
-
 const activeTools = FUB_SAFE_MODE
   ? TOOL_DEFINITIONS.filter(t => !t.name.toLowerCase().startsWith('delete') && t.name !== 'inboxAppDeleteParticipant' && t.name !== 'deleteReaction')
   : TOOL_DEFINITIONS;
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: activeTools
-}));
+function createServer() {
+  const s = new Server(
+    { name: 'followupboss-mcp-server', version: '1.0.0' },
+    { capabilities: { tools: {} } }
+  );
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  s.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: activeTools
+  }));
+
+  s.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   if (FUB_SAFE_MODE && (name.toLowerCase().startsWith('delete') || name === 'inboxAppDeleteParticipant' || name === 'deleteReaction')) {
     return {
@@ -2895,15 +2896,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       isError: true,
     };
   }
-});
-
-async function main() {
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
   });
 
-  await server.connect(transport);
+  return s;
+}
 
+async function main() {
   const httpServer = http.createServer(async (req, res) => {
     try {
       if (req.method === 'POST') {
@@ -2911,16 +2909,25 @@ async function main() {
           let data = '';
           req.on('data', chunk => { data += chunk; });
           req.on('end', () => {
-            console.error(`[mcp] raw body (${data.length} bytes): ${data.slice(0, 300)}`);
             try { resolve(data ? JSON.parse(data) : undefined); }
             catch (e) { reject(e); }
           });
           req.on('error', reject);
         });
-        console.error(`[mcp] parsed body:`, JSON.stringify(body)?.slice(0, 200));
+
+        // notifications/initialized has no response — just acknowledge
+        if (body?.method === 'notifications/initialized') {
+          res.writeHead(202).end();
+          return;
+        }
+
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        const server = createServer();
+        await server.connect(transport);
+        res.on('finish', () => server.close().catch(() => {}));
         await transport.handleRequest(req, res, body);
       } else {
-        await transport.handleRequest(req, res);
+        res.writeHead(405).end();
       }
     } catch (err) {
       console.error('Transport error:', err.message, err.stack);
