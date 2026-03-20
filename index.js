@@ -15,6 +15,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
 import http from 'http';
+import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -2899,7 +2900,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 async function main() {
   const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined, // stateless — no per-session state needed
+    sessionIdGenerator: () => randomUUID(),
   });
 
   await server.connect(transport);
