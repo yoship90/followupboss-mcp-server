@@ -78,6 +78,18 @@ function send(res, status, body) {
 
 setTimeout(() => {
   const server = http.createServer((req, res) => {
+    // OAuth 2.0 discovery endpoint — Claude.ai uses this to find the token URL
+    if (req.method === "GET" && req.url === "/.well-known/oauth-authorization-server") {
+      const host = req.headers.host;
+      const base = `https://${host}`;
+      return send(res, 200, {
+        issuer: base,
+        token_endpoint: `${base}/oauth/token`,
+        grant_types_supported: ["client_credentials"],
+        token_endpoint_auth_methods_supported: ["client_secret_post"],
+      });
+    }
+
     // OAuth token endpoint — no auth required here
     if (req.method === "POST" && req.url === "/oauth/token") {
       let body = "";
