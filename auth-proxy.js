@@ -44,7 +44,7 @@ function verifyPKCE(codeVerifier, codeChallenge, method) {
 // Start supergateway on the internal port
 const gw = spawn(
   "npx",
-  ["-y", "supergateway", "--port", String(INTERNAL_PORT), "--stdio", "node index.js"],
+  ["-y", "supergateway", "--port", String(INTERNAL_PORT), "--stdio", "node index.js", "--stateless"],
   { stdio: "inherit", env: process.env }
 );
 
