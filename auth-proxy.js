@@ -78,6 +78,8 @@ function send(res, status, body) {
 
 setTimeout(() => {
   const server = http.createServer((req, res) => {
+    console.log(`[${req.method}] ${req.url} — auth: ${req.headers["authorization"] ?? "(none)"}`);
+
     // OAuth 2.0 discovery endpoint — Claude.ai uses this to find the token URL
     if (req.method === "GET" && req.url === "/.well-known/oauth-authorization-server") {
       const host = req.headers.host;
@@ -108,6 +110,8 @@ setTimeout(() => {
         }
 
         const { grant_type, client_id, client_secret } = params;
+
+        console.log(`[token] grant_type=${grant_type} client_id=${client_id} match=${client_id === CLIENT_ID && client_secret === CLIENT_SECRET}`);
 
         if (grant_type !== "client_credentials") {
           return send(res, 400, { error: "unsupported_grant_type" });
