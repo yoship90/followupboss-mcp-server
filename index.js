@@ -2898,11 +2898,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StreamableHTTPServerTransport({ path: '/mcp' });
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined, // stateless — no per-session state needed
+  });
+
   await server.connect(transport);
 
-  const httpServer = http.createServer((req, res) => {
-    transport.handleRequest(req, res);
+  const httpServer = http.createServer(async (req, res) => {
+    try {
+      await transport.handleRequest(req, res);
+    } catch (err) {
+      console.error('Transport error:', err);
+      if (!res.headersSent) {
+        res.writeHead(500).end(JSON.stringify({ error: err.message }));
+      }
+    }
   });
 
   const port = parseInt(process.env.MCP_PORT || '8091', 10);
