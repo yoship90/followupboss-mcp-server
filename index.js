@@ -2911,11 +2911,13 @@ async function main() {
           let data = '';
           req.on('data', chunk => { data += chunk; });
           req.on('end', () => {
+            console.error(`[mcp] raw body (${data.length} bytes): ${data.slice(0, 300)}`);
             try { resolve(data ? JSON.parse(data) : undefined); }
             catch (e) { reject(e); }
           });
           req.on('error', reject);
         });
+        console.error(`[mcp] parsed body:`, JSON.stringify(body)?.slice(0, 200));
         await transport.handleRequest(req, res, body);
       } else {
         await transport.handleRequest(req, res);
