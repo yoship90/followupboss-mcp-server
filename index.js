@@ -2909,9 +2909,11 @@ async function main() {
     try {
       await transport.handleRequest(req, res);
     } catch (err) {
-      console.error('Transport error:', err);
+      console.error('Transport error:', err.message);
+      console.error(err.stack);
       if (!res.headersSent) {
-        res.writeHead(500).end(JSON.stringify({ error: err.message }));
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
       }
     }
   });
