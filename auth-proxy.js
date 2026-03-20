@@ -33,7 +33,7 @@ const BEARER_TOKEN = createHash("sha256")
 // Start supergateway on the internal port
 const gw = spawn(
   "npx",
-  ["-y", "supergateway", "--port", String(INTERNAL_PORT), "--", "node", "index.js"],
+  ["-y", "supergateway", "--port", String(INTERNAL_PORT), "--stdio", "node index.js"],
   { stdio: "inherit", env: process.env }
 );
 
