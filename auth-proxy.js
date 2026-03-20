@@ -110,8 +110,8 @@ setTimeout(() => {
     // RFC 8414 — authorization server metadata
     if (req.method === "GET" && (
       urlObj.pathname === "/.well-known/oauth-authorization-server" ||
-      urlObj.pathname === "/.well-known/oauth-authorization-server/sse" ||
-      urlObj.pathname === "/.well-known/oauth-authorization-server/mcp"
+      urlObj.pathname === "/.well-known/oauth-authorization-server/mcp" ||
+      urlObj.pathname === "/.well-known/oauth-authorization-server/sse"
     )) {
       const base = `https://${req.headers.host}`;
       return send(res, 200, {

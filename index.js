@@ -2898,7 +2898,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StreamableHTTPServerTransport({ path: '/sse' });
+  const transport = new StreamableHTTPServerTransport({ path: '/mcp' });
   await server.connect(transport);
 
   const httpServer = http.createServer((req, res) => {
