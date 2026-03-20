@@ -63,11 +63,20 @@ function proxyRequest(req, res) {
   };
 
   const proxy = http.request(options, (proxyRes) => {
+    console.log(`[proxy] ${req.method} ${req.url} → ${proxyRes.statusCode}`);
+    let body = "";
+    proxyRes.on("data", (chunk) => (body += chunk));
+    proxyRes.on("end", () => {
+      if (proxyRes.statusCode >= 400 || body.includes("error")) {
+        console.log(`[proxy] response body: ${body.slice(0, 500)}`);
+      }
+    });
     res.writeHead(proxyRes.statusCode, proxyRes.headers);
     proxyRes.pipe(res);
   });
 
-  proxy.on("error", () => {
+  proxy.on("error", (err) => {
+    console.log(`[proxy] error: ${err.message}`);
     res.writeHead(502);
     res.end(JSON.stringify({ error: "Gateway error" }));
   });
