@@ -643,7 +643,9 @@ const TOOL_DEFINITIONS = [
     "properties": {
       "limit": { "type": "number", "description": "Maximum number of results to return" },
       "offset": { "type": "number", "description": "Offset for pagination" },
-      "next": { "type": "string", "description": "Cursor for next page of results" }
+      "next": { "type": "string", "description": "Cursor for next page of results" },
+      "fub2": { "type": "boolean", "description": "Return smart lists created in FUB's current UI. By default only classic smart lists are returned." },
+      "all": { "type": "boolean", "description": "Return all smart lists from both FUB Classic and current FUB. Use this to see all user-created smart lists." }
     },
     "required": []
   }
@@ -2256,7 +2258,7 @@ async function handleToolCall(name, args) {
     // ==================== SMART LISTS ====================
     case 'listSmartLists': {
       const response = await fubApi.get('/smartLists', { params: args });
-      return { smartLists: response.data.smartLists, _metadata: response.data._metadata };
+      return { smartLists: response.data.smartlists, _metadata: response.data._metadata };
     }
     case 'getSmartList': {
       const response = await fubApi.get(`/smartLists/${args.id}`);
